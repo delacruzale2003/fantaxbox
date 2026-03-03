@@ -26,9 +26,7 @@ export default function SuccessView({ wonPrize, storeName }: any) {
             )}
             
             {/* Nombre del Premio */}
-            <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight uppercase tracking-tighter mb-6">
-              {wonPrize.name}
-            </h2>
+            
 
             {/* Instrucciones */}
             <div className="space-y-1">

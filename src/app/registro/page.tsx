@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Loader2, AlertCircle } from 'lucide-react'
 
@@ -10,57 +9,51 @@ import StoreHeader from './components/StoreHeader'
 import RegisterForm from './components/RegisterForm'
 import SuccessView from './components/SuccessView'
 
-export default function RegisterStorePage() {
-  const params = useParams()
-  const storeId = params?.storeId as string
+export default function RegisterPage() {
+  // Obtenemos el nombre de la campaña desde el .env
+  const CAMPAIGN_NAME = process.env.NEXT_PUBLIC_CAMPAIGN || 'x'
 
-  // Estados de Negocio
-  const [storeName, setStoreName] = useState('')
   const [campaignId, setCampaignId] = useState('')
-  const [validStore, setValidStore] = useState<boolean | null>(null)
-  
-  // Estados de UI
+  const [isValid, setIsValid] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [wonPrize, setWonPrize] = useState<any>(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!storeId) return
-    
-    const fetchStore = async () => {
+    const initCampaign = async () => {
+      // Buscamos el ID de la campaña por su nombre y verificamos que esté activa
       const { data, error } = await supabase
-        .from('stores')
-        .select('name, campaign_id, is_active')
-        .eq('id', storeId)
+        .from('campaigns')
+        .select('id, is_active')
+        .eq('name', CAMPAIGN_NAME)
         .single()
 
       if (error || !data || !data.is_active) {
-        setValidStore(false)
+        console.error("Campaña no encontrada o inactiva");
+        setIsValid(false)
         return
       }
 
-      setStoreName(data.name)
-      setCampaignId(data.campaign_id)
-      setValidStore(true)
+      setCampaignId(data.id)
+      setIsValid(true)
     }
 
-    fetchStore()
-  }, [storeId])
+    initCampaign()
+  }, [CAMPAIGN_NAME])
 
-  // Pantalla de carga (Apple/Fanta style)
-  if (validStore === null) return (
+  // Pantalla de carga (Fanta style)
+  if (isValid === null) return (
     <div className="min-h-screen bg-gradient-to-r from-[#f89824] to-[#e53829] flex items-center justify-center">
       <Loader2 className="animate-spin text-white/50" size={40} />
     </div>
   )
   
-  // Tienda no válida
-  if (validStore === false) return (
+  // Campaña no disponible
+  if (isValid === false) return (
     <div className="min-h-screen bg-gradient-to-r from-[#f89824] to-[#e53829] flex flex-col items-center justify-center p-6 text-white text-center">
       <AlertCircle size={64} className="mb-4 opacity-50" />
-      <h1 className="text-2xl font-bold uppercase tracking-tighter">Enlace no válido</h1>
-      <p className="opacity-80">Esta tienda no existe o la campaña ha finalizado.</p>
+      <h1 className="text-2xl font-black uppercase tracking-tighter">Registro no disponible</h1>
+      <p className="opacity-80">La campaña ha finalizado o el enlace es incorrecto.</p>
     </div>
   )
 
@@ -71,25 +64,18 @@ export default function RegisterStorePage() {
         {!success ? (
           <div key="register-form">
             <StoreHeader />
-            
             <RegisterForm 
-              storeId={storeId}
               campaignId={campaignId}
               setLoading={setLoading}
               loading={loading}
               setSuccess={setSuccess}
-              setWonPrize={setWonPrize}
               setError={setError}
               error={error}
             />
           </div>
         ) : (
-          /* Aquí pasamos el storeName obtenido de la DB al SuccessView */
           <div key="success-view">
-            <SuccessView 
-              storeName={storeName} 
-              wonPrize={wonPrize} 
-            />
+            <SuccessView />
           </div>
         )}
 
